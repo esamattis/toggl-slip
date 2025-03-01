@@ -1,5 +1,5 @@
 import { format, addDays, startOfWeek } from "date-fns";
-import chalk from "chalk";
+import chalk, { type ChalkInstance } from "chalk";
 import { Table } from "console-table-printer";
 import {
     command,
@@ -222,12 +222,12 @@ async function dailyHoursInMs(options: {
 }
 
 // Format hours like "1h 30m"
-function formatHourMin(ms: number, options?: { color?: boolean }) {
+function formatHourMin(ms: number, options?: { color?: ChalkInstance }) {
     const text = prettyMilliseconds(ms, { hideSeconds: true });
     // const text = hours.toFixed(2);
 
-    if (options?.color === false) {
-        return text;
+    if (options?.color) {
+        return options.color(text);
     }
 
     if (ms < 0) {
@@ -280,12 +280,12 @@ async function slipFrom(options: {
 
     const table = new Table({
         columns: [
-            { name: "dayName", title: "Day" },
-            { name: "type", title: "Type" },
             { name: "day", title: "Date" },
             { name: "hours", title: "Hours" },
             { name: "slip", title: "Slip" },
             { name: "slipTotal", title: "Total Slip" },
+            { name: "type", title: "Type" },
+            { name: "dayName", title: "Day" },
             { name: "description", title: "Description" },
         ],
     });
@@ -296,16 +296,20 @@ async function slipFrom(options: {
         }
 
         const missing = row.ms === 0 && !row.day.isOff();
+        const extra = row.ms > 0 && row.day.isOff();
 
         table.addRow({
             day: missing
                 ? chalk.bgRed.white(row.day.toString())
                 : row.day.toString(),
             dayName: row.day.dayName(),
-            type: row.day.type(),
-            hours: formatHourMin(row.ms, { color: false }),
-            slip: formatHourMin(row.slip),
+            hours: formatHourMin(row.ms, {
+                color:
+                    extra || row.ms >= options.target ? chalk.green : chalk.red,
+            }),
+            slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
             slipTotal: formatHourMin(row.totalSlip),
+            type: row.day.type(),
             description: Array.from(
                 new Set(row.description.filter((s) => s.trim())),
             ).join(", "),
