@@ -17,6 +17,8 @@ slip for. You can find it in the URL of the workspace in Toggl Track.
 
 Use Node.js 23. See [mise.toml](mise.toml)
 
+Usage:
+
 ```
 ❯ npm ci
 ❯ node src/main.mts -h
@@ -24,6 +26,7 @@ toggl-slip
 
 OPTIONS:
   --target, -t <number>    - Hour target in decimal format. Defaults to 7.5 [optional]
+  --last, -l <number>      - Show only the last N days, but still fetch from the --start-date [optional]
   --all, -a <true/false>   - Show even the empty days [optional]
   --fresh, -f <true/false> - Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h [optional]
   --exclude, -x <str>      - Exclude time entries whose descriptions contain the given string [optional]

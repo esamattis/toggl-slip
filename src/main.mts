@@ -250,6 +250,7 @@ async function slipFrom(options: {
     exclude: string | undefined;
     target: number;
     all: boolean;
+    last: number | undefined;
 }) {
     const hoursByDay = await dailyHoursInMs(options);
 
@@ -302,7 +303,8 @@ async function slipFrom(options: {
         ],
     });
 
-    for (const row of days) {
+    const sliced = options.last ? days.slice(-options.last) : days;
+    for (const row of sliced) {
         if (!options.all && row.ms === 0 && row.day.isOff()) {
             continue;
         }
@@ -332,18 +334,21 @@ async function slipFrom(options: {
 
     table.printTable();
 
+    const workedDays = days.filter((day) => day.ms > 0).length;
+
     console.log(
-        `Total hours: ${formatHourMin(totalHours)} with slip of ${formatHourMin(totalSlip)}`,
+        `${formatHourMin(totalHours)} in ${workedDays} days with slip of ${formatHourMin(totalSlip)}`,
     );
 }
 
 async function parseArgs(): Promise<{
-    exclude?: string;
+    exclude: string | undefined;
     startDate: string;
     endDate: string;
     target: number;
     fresh: boolean;
     all: boolean;
+    last: number | undefined;
 }> {
     return await new Promise((resolve) => {
         const app = command({
@@ -356,6 +361,13 @@ async function parseArgs(): Promise<{
                     long: "target",
                     defaultValue: () => 7.5,
                     short: "t",
+                }),
+                last: option({
+                    type: optional(number),
+                    description:
+                        "Show only the last N days, but still fetch from the --start-date",
+                    long: "last",
+                    short: "l",
                 }),
                 all: option({
                     // @ts-ignore
@@ -419,4 +431,5 @@ await slipFrom({
     end: Day.from(args.endDate),
     exclude: args.exclude,
     all: args.all,
+    last: args.last,
 });
