@@ -1,0 +1,5 @@
+[tools]
+node = "23"
+[env]
+_.path = ['{{config_root}}/node_modules/.bin']
+NODE_NO_WARNINGS = 1
