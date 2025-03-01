@@ -241,6 +241,7 @@ async function slipFrom(options: {
     end: Day;
     exclude: string | undefined;
     target: number;
+    all: boolean;
 }) {
     const hoursByDay = await dailyHoursInMs(options);
 
@@ -291,7 +292,7 @@ async function slipFrom(options: {
     });
 
     for (const row of days) {
-        if (row.ms === 0 && row.day.isOff()) {
+        if (!options.all && row.ms === 0 && row.day.isOff()) {
             continue;
         }
 
@@ -329,6 +330,7 @@ async function parseArgs(): Promise<{
     endDate: string;
     target: number;
     fresh: boolean;
+    all: boolean;
 }> {
     return await new Promise((resolve) => {
         const app = command({
@@ -342,13 +344,22 @@ async function parseArgs(): Promise<{
                     defaultValue: () => 7.5,
                     short: "t",
                 }),
+                all: option({
+                    // @ts-ignore
+                    type: boolean,
+                    long: "all",
+                    short: "a",
+                    description: "Show even the empty days",
+                    defaultValue: () => false,
+                }),
                 fresh: option({
                     // @ts-ignore
                     type: boolean,
                     long: "fresh",
+                    short: "f",
                     description:
                         "Clear cached requests. Use when you have made changes to your Toggl account. When just playing with the flags you can use the cache",
-                    short: "f",
+                    defaultValue: () => false,
                 }),
                 exclude: option({
                     type: optional(string),
@@ -394,4 +405,5 @@ await slipFrom({
     start: Day.from(args.startDate),
     end: Day.from(args.endDate),
     exclude: args.exclude,
+    all: args.all,
 });
