@@ -313,7 +313,9 @@ async function slipFrom(options: {
             dayName: row.day.dayName(),
             hours: formatHourMin(row.ms, {
                 color:
-                    extra || row.ms >= options.target ? chalk.green : chalk.red,
+                    row.day.isOff() || row.ms >= options.target
+                        ? chalk.green
+                        : chalk.red,
             }),
             slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
             slipTotal: formatHourMin(row.totalSlip),
