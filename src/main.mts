@@ -45,7 +45,7 @@ class Day {
     }
 
     nextDay(): Day {
-        return Day.fromDate(addDays(this.toDate(), 1));
+        return Day.from(addDays(this.toDate(), 1));
     }
 
     dayName(): "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun" {
@@ -86,23 +86,27 @@ class Day {
     }
 
     static today(): Day {
-        return Day.fromDate(new Date());
+        return Day.from(new Date());
     }
 
     static startOfWeek(): Day {
-        return Day.fromDate(startOfWeek(new Date(), { weekStartsOn: 1 }));
+        return Day.from(startOfWeek(new Date(), { weekStartsOn: 1 }));
     }
 
-    static fromDate(date: Date): Day {
-        return new Day(date.getFullYear(), date.getMonth() + 1, date.getDate());
-    }
-
-    static from(dateString: string): Day {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-            throw new Error(`Invalid date string: ${dateString}`);
+    static from(date: string | Date): Day {
+        if (date instanceof Date) {
+            return new Day(
+                date.getFullYear(),
+                date.getMonth() + 1,
+                date.getDate(),
+            );
         }
 
-        const [year, month, day] = dateString.split("-").map((s) => Number(s));
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            throw new Error(`Invalid date string: ${date}`);
+        }
+
+        const [year, month, day] = date.split("-").map((s) => Number(s));
         return new Day(year!, month!, day!);
     }
 }
