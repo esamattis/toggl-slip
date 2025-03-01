@@ -33,4 +33,4 @@ FLAGS:
   --help, -h - show help
 ```
 
-<img width="710" alt="image" src="https://github.com/user-attachments/assets/c437dc5b-cfed-49e0-97c9-184fa37d0fb7" />
+<img width="724" alt="image" src="https://github.com/user-attachments/assets/035fc998-3fa6-4273-8e31-795cf453c1b9" />
