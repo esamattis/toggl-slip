@@ -2,7 +2,7 @@
 # Toggl Track Hour Slip Calculator
 
 Calculate the current hour slip (tuntiliukuma, liukuma-aika) for a Toggl Track workspace.
-Handles finnish holidays and weekends (arkipyhät).
+Handles finnish holidays (arkipyhät) and weekends.
 
 Configure following environment variables:
 
