@@ -18,6 +18,7 @@ slip for. You can find it in the URL of the workspace in Toggl Track.
 Use Node.js 23. See [mise.toml](mise.toml)
 
 ```
+❯ npm ci
 ❯ node src/main.mts -h
 toggl-slip
 
