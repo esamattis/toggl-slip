@@ -312,11 +312,26 @@ async function slipFrom(options: {
         const missing = row.ms === 0 && !row.day.isOff();
         const extra = row.ms > 0 && row.day.isOff();
 
+        let dayName: string = row.day.dayName();
+        if (missing) {
+            dayName = chalk.bgRed.white(dayName);
+        } else if (row.day.isWeekend()) {
+            dayName = chalk.gray(dayName);
+        }
+
+        let type = row.day.type();
+        if (row.day.publicHoliday()) {
+            type = chalk.yellow(type);
+        } else if (type !== "workday") {
+            type = chalk.gray(type);
+        }
+
         table.addRow({
+            dayName,
+            type,
             day: missing
                 ? chalk.bgRed.white(row.day.toString())
                 : row.day.toString(),
-            dayName: row.day.dayName(),
             hours: formatHourMin(row.ms, {
                 color:
                     row.day.isOff() || row.ms >= options.target
@@ -325,7 +340,6 @@ async function slipFrom(options: {
             }),
             slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
             slipTotal: formatHourMin(row.totalSlip),
-            type: row.day.type(),
             description: Array.from(
                 new Set(row.description.filter((s) => s.trim())),
             ).join(", "),
