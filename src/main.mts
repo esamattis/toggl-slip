@@ -251,7 +251,10 @@ async function slipFrom(options: {
 
     const days = [];
 
-    while (!current.is(options.end)) {
+    // Include the current day in the calculation
+    const end = options.end.nextDay();
+
+    while (!current.is(end)) {
         const { ms, description } = hoursByDay.get(current.toString()) || {
             ms: 0,
             description: [],
