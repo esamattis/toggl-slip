@@ -17,6 +17,14 @@ import { clearCache, fetchWithCache } from "./fetch-cache.mts";
 import { holidays } from "./holidays.mts";
 import prettyMilliseconds from "pretty-ms";
 
+const PUBLIC_HOLIDAYS: Map<string, string> = new Map(
+    holidays.flatMap((holiday) => {
+        if (holiday.title === "Äitienpäivä") return [];
+        if (holiday.title === "Isänpäivä") return [];
+        return [[holiday.date, holiday.title]];
+    }),
+);
+
 class Day {
     constructor(year: number, month: number, day: number) {
         this.year = year;
@@ -44,24 +52,20 @@ class Day {
         return format(this.toDate(), "EE") as any;
     }
 
-    isPublicHoliday() {
+    publicHoliday(): string | undefined {
         const str = this.toString();
-        return holidays.some((holiday) => {
-            if (holiday.date !== str) return false;
-            if (holiday.title.toLowerCase() === "Äitienpäivä") return false;
-            if (holiday.title.toLowerCase() === "Isänpäivä") return false;
-            return true;
-        });
+        return PUBLIC_HOLIDAYS.get(str);
     }
 
     isOff(): boolean {
-        return this.isWeekend() || this.isPublicHoliday();
+        return this.isWeekend() || this.publicHoliday() !== undefined;
     }
 
-    type(): "work" | "holiday" | "weekend" {
+    type(): string {
+        const ph = this.publicHoliday();
+        if (ph) return ph;
         if (this.isWeekend()) return "weekend";
-        if (this.isPublicHoliday()) return "holiday";
-        return "work";
+        return "workday";
     }
 
     isWeekend(): boolean {
