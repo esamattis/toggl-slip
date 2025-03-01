@@ -25,7 +25,7 @@ toggl-slip
 OPTIONS:
   --target, -t <number>    - Hour target in decimal format. Defaults to 7.5 [optional]
   --all, -a <true/false>   - Show even the empty days [optional]
-  --fresh, -f <true/false> - Clear cached requests. Use when you have made changes to your Toggl account. When just playing with the flags you can use the cache [optional]
+  --fresh, -f <true/false> - Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h [optional]
   --exclude, -x <str>      - Exclude time entries whose descriptions contain the given string [optional]
   --start-date, -s <str>   - Start day of the slip calculation. Defaults to the start of the current week [optional]
   --end-date, -e <str>     - End day of the slip calculation. Defaults to the current day [optional]

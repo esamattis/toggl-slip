@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import chalk from "chalk";
+import prettyMilliseconds from "pretty-ms";
+import { pid } from "node:process";
 
 // Generates a SHA1 hash for the cache key
 function generateCacheKey(url: string, body: any): string {
@@ -32,9 +34,11 @@ async function getCachePath(cacheKey: string): Promise<string> {
 }
 
 // Checks if a cached response exists and returns it if valid
-async function getCachedResponse(
-    cacheKey: string,
-): Promise<{ data: any; headers: Record<string, string> } | null> {
+async function getCachedResponse(cacheKey: string): Promise<{
+    data: any;
+    headers: Record<string, string>;
+    meta: { stored: number };
+} | null> {
     const cachePath = await getCachePath(cacheKey);
 
     try {
@@ -54,7 +58,17 @@ async function saveResponseToCache(
     headers: Record<string, string>,
 ): Promise<void> {
     const cachePath = await getCachePath(cacheKey);
-    const cacheContent = JSON.stringify({ data, headers }, null, 2);
+    const cacheContent = JSON.stringify(
+        {
+            data,
+            headers,
+            meta: {
+                stored: Date.now(),
+            },
+        },
+        null,
+        2,
+    );
 
     try {
         await fs.writeFile(cachePath, cacheContent, "utf-8");
@@ -76,11 +90,25 @@ export async function fetchWithCache(
     const cachedResponse = await getCachedResponse(cacheKey);
 
     if (cachedResponse) {
-        console.log(
-            chalk.blue(`Using cached response for ${url}`),
-            JSON.stringify(requestBody),
-        );
-        return cachedResponse;
+        // 24h in ms
+        const maxAge = 1000 * 60 * 60 * 12;
+        const age = Date.now() - cachedResponse.meta.stored;
+
+        if (age < maxAge) {
+            console.log(
+                chalk.blue(
+                    `Using cached response (${prettyMilliseconds(age)}) for ${url}`,
+                ),
+                JSON.stringify(requestBody),
+            );
+            return cachedResponse;
+        } else {
+            console.log(
+                chalk.gray(
+                    `Cache found but it is too old ${prettyMilliseconds(age)}`,
+                ),
+            );
+        }
     }
 
     console.log(

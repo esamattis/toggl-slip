@@ -371,7 +371,7 @@ async function parseArgs(): Promise<{
                     long: "fresh",
                     short: "f",
                     description:
-                        "Clear cached requests. Use when you have made changes to your Toggl account. When just playing with the flags you can use the cache",
+                        "Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h",
                     defaultValue: () => false,
                 }),
                 exclude: option({
