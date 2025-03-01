@@ -1,5 +1,7 @@
+# https://mise.jdx.dev/
 [tools]
 node = "23"
 [env]
 _.path = ['{{config_root}}/node_modules/.bin']
+_.file = ".env"
 NODE_NO_WARNINGS = 1
