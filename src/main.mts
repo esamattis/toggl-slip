@@ -9,6 +9,7 @@ import {
     optional,
     boolean,
     number,
+    flag,
 } from "cmd-ts";
 
 import { clearCache } from "./fetch-cache.mts";
@@ -243,24 +244,21 @@ async function parseArgs(): Promise<{
                     long: "last",
                     short: "l",
                 }),
-                links: option({
-                    // @ts-ignore
-                    type: optional(boolean),
+                links: flag({
+                    type: boolean,
                     description: "Show Toggl links for each day",
                     long: "links",
                     short: "L",
                     defaultValue: () => false,
                 }),
-                all: option({
-                    // @ts-ignore
+                all: flag({
                     type: boolean,
                     long: "all",
                     short: "a",
                     description: "Show even the empty days",
                     defaultValue: () => false,
                 }),
-                fresh: option({
-                    // @ts-ignore
+                fresh: flag({
                     type: boolean,
                     long: "fresh",
                     short: "f",
