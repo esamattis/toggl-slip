@@ -88,8 +88,6 @@ export async function fetchDetailedReport(options: {
     };
 }
 
-await getProjects();
-
 export async function* togglEntries(options: { start: Day; end: Day }) {
     let next: string | null = null;
 
