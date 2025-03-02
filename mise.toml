@@ -5,3 +5,6 @@ node = "23"
 _.path = ['{{config_root}}/node_modules/.bin']
 _.file = ".env"
 NODE_NO_WARNINGS = 1
+[tasks.main]
+alias = "main"
+run = "node src/main.mts"
