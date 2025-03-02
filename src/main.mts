@@ -21,28 +21,7 @@ async function dailyHoursInMs(options: {
     start: Day;
     end: Day;
     exclude: string | undefined;
-}) {
-    const days = new Map<string, { ms: number; description: string[] }>();
-
-    for await (const entry of togglEntries(options)) {
-        const description = entry.description;
-        if (options.exclude && description.includes(options.exclude)) {
-            continue;
-        }
-
-        for (const timeEntry of entry.time_entries) {
-            const date = format(timeEntry.start, "yyyy-MM-dd");
-            const current = days.get(date) || { ms: 0, description: [] };
-            const ms = timeEntry.seconds * 1000;
-            days.set(date, {
-                ms: current.ms + ms,
-                description: [...current.description, description],
-            });
-        }
-    }
-
-    return days;
-}
+}) {}
 
 // Format hours like "1h 30m"
 function formatHourMin(ms: number, options?: { color?: ChalkInstance }) {
@@ -59,7 +38,7 @@ function formatHourMin(ms: number, options?: { color?: ChalkInstance }) {
     return chalk.green(text);
 }
 
-async function slipFrom(options: {
+interface HoursOptions {
     start: Day;
     end: Day;
     exclude: string | undefined;
@@ -67,110 +46,162 @@ async function slipFrom(options: {
     target: number;
     all: boolean;
     last: number | undefined;
-}) {
-    const hoursByDay = await dailyHoursInMs(options);
+}
 
-    let current = options.start;
-    let totalSlip = 0;
-    let totalHours = 0;
+class Hours {
+    options: HoursOptions;
+    hoursByDay: Map<string, { ms: number; description: string[] }>;
 
-    const days = [];
-
-    // Include the current day in the calculation
-    const end = options.end.nextDay();
-
-    while (!current.is(end)) {
-        const { ms, description } = hoursByDay.get(current.toString()) || {
-            ms: 0,
-            description: [],
-        };
-
-        let slip;
-        if (current.isOff()) {
-            slip = ms;
-        } else {
-            slip = ms - options.target;
-        }
-
-        totalHours += ms;
-        totalSlip += slip;
-
-        days.push({
-            day: current,
-            ms,
-            description,
-            slip,
-            totalHours,
-            totalSlip,
-        });
-
-        current = current.nextDay();
+    constructor(options: HoursOptions) {
+        this.options = options;
+        this.hoursByDay = new Map();
     }
 
-    const table = new Table({
-        columns: [
-            { name: "day", title: "Date" },
-            { name: "hours", title: "Hours" },
-            { name: "slip", title: "Slip" },
-            { name: "slipTotal", title: "Total Slip" },
-            { name: "type", title: "Type" },
-            { name: "dayName", title: "Day" },
-            { name: "description", title: "Description" },
-        ],
-    });
+    async loadHoursByDay() {
+        for await (const entry of togglEntries({
+            start: this.options.start,
+            end: this.options.end,
+        })) {
+            const description = entry.description;
+            if (
+                this.options.exclude &&
+                description.includes(this.options.exclude)
+            ) {
+                continue;
+            }
 
-    const sliced = options.last ? days.slice(-options.last) : days;
-    for (const row of sliced) {
-        if (options.filter && !row.description.includes(options.filter)) {
-            continue;
+            for (const timeEntry of entry.time_entries) {
+                const date = format(timeEntry.start, "yyyy-MM-dd");
+                const current = this.hoursByDay.get(date) || {
+                    ms: 0,
+                    description: [],
+                };
+                const ms = timeEntry.seconds * 1000;
+                this.hoursByDay.set(date, {
+                    ms: current.ms + ms,
+                    description: [...current.description, description],
+                });
+            }
         }
-
-        if (!options.all && row.ms === 0 && row.day.isOff()) {
-            continue;
-        }
-
-        const missing = row.ms === 0 && !row.day.isOff();
-        const extra = row.ms > 0 && row.day.isOff();
-
-        let dayName: string = row.day.dayName();
-        if (row.day.isWeekend()) {
-            dayName = chalk.gray(dayName);
-        }
-
-        let type = row.day.type();
-        if (row.day.publicHoliday()) {
-            type = chalk.yellow(type);
-        } else if (type !== "workday") {
-            type = chalk.gray(type);
-        }
-
-        table.addRow({
-            dayName,
-            type,
-            day: missing
-                ? chalk.bgRed.white(row.day.toString())
-                : row.day.toString(),
-            hours: formatHourMin(row.ms, {
-                color:
-                    row.day.isOff() || row.ms >= options.target
-                        ? chalk.green
-                        : chalk.red,
-            }),
-            slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
-            slipTotal: formatHourMin(row.totalSlip),
-            description: Array.from(
-                new Set(row.description.filter((s) => s.trim())),
-            ).join(", "),
-        });
     }
 
-    table.printTable();
+    calculateSlip() {
+        let current = this.options.start;
+        let totalSlip = 0;
+        let totalHours = 0;
 
-    const workedDays = days.filter((day) => day.ms > 0).length;
+        const days = [];
 
-    console.log(
-        `${formatHourMin(totalHours)} in ${workedDays} days with slip of ${formatHourMin(totalSlip)}`,
-    );
+        // Include the current day in the calculation
+        const end = this.options.end.nextDay();
+
+        while (!current.is(end)) {
+            const { ms, description } = this.hoursByDay.get(
+                current.toString(),
+            ) || {
+                ms: 0,
+                description: [],
+            };
+
+            let slip;
+            if (current.isOff()) {
+                slip = ms;
+            } else {
+                slip = ms - this.options.target;
+            }
+
+            totalHours += ms;
+            totalSlip += slip;
+
+            days.push({
+                day: current,
+                hours: ms,
+                description,
+                slip,
+                totalHours,
+                totalSlip,
+            });
+
+            current = current.nextDay();
+        }
+
+        return days;
+    }
+
+    printTable() {
+        const days = this.calculateSlip();
+        const table = new Table({
+            columns: [
+                { name: "day", title: "Date" },
+                { name: "hours", title: "Hours" },
+                { name: "slip", title: "Slip" },
+                { name: "slipTotal", title: "Total Slip" },
+                { name: "type", title: "Type" },
+                { name: "dayName", title: "Day" },
+                { name: "description", title: "Description" },
+            ],
+        });
+
+        const sliced = this.options.last
+            ? days.slice(-this.options.last)
+            : days;
+        for (const row of sliced) {
+            if (
+                this.options.filter &&
+                !row.description.includes(this.options.filter)
+            ) {
+                continue;
+            }
+
+            if (!this.options.all && row.hours === 0 && row.day.isOff()) {
+                continue;
+            }
+
+            const missing = row.hours === 0 && !row.day.isOff();
+            const extra = row.hours > 0 && row.day.isOff();
+
+            let dayName: string = row.day.dayName();
+            if (row.day.isWeekend()) {
+                dayName = chalk.gray(dayName);
+            }
+
+            let type = row.day.type();
+            if (row.day.publicHoliday()) {
+                type = chalk.yellow(type);
+            } else if (type !== "workday") {
+                type = chalk.gray(type);
+            }
+
+            table.addRow({
+                dayName,
+                type,
+                day: missing
+                    ? chalk.bgRed.white(row.day.toString())
+                    : row.day.toString(),
+                hours: formatHourMin(row.hours, {
+                    color:
+                        row.day.isOff() || row.hours >= this.options.target
+                            ? chalk.green
+                            : chalk.red,
+                }),
+                slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
+                slipTotal: formatHourMin(row.totalSlip),
+                description: Array.from(
+                    new Set(row.description.filter((s) => s.trim())),
+                ).join(", "),
+            });
+        }
+
+        table.printTable();
+
+        const workedDays = days.filter((day) => day.hours > 0).length;
+        const totalHours = days.at(-1)?.totalHours || 0;
+        const totalSlip = days.at(-1)?.totalSlip || 0;
+
+        console.log(
+            `${formatHourMin(totalHours)} in ${workedDays} days with slip of ${formatHourMin(totalSlip)}`,
+        );
+    }
 }
 
 async function parseArgs(): Promise<{
@@ -265,7 +296,7 @@ if (args.fresh) {
     await clearCache();
 }
 
-await slipFrom({
+const hours = new Hours({
     target: args.target * 60 * 60 * 1000,
     start: Day.from(args.startDate),
     end: Day.from(args.endDate),
@@ -274,3 +305,6 @@ await slipFrom({
     all: args.all,
     last: args.last,
 });
+
+await hours.loadHoursByDay();
+hours.printTable();
