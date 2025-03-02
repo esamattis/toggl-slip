@@ -65,11 +65,19 @@ class Hours {
             end: this.options.end,
         })) {
             const description = entry.description;
-            if (
-                this.options.exclude &&
-                description.includes(this.options.exclude)
-            ) {
-                continue;
+
+            if (this.options.exclude) {
+                let excludeFound = this.options.exclude
+                    .split("|")
+                    .some((exclude) =>
+                        description
+                            .toLowerCase()
+                            .includes(exclude.toLowerCase()),
+                    );
+
+                if (excludeFound) {
+                    continue;
+                }
             }
 
             for (const timeEntry of entry.time_entries) {
