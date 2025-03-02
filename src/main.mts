@@ -45,6 +45,7 @@ interface HoursOptions {
     filter: string | undefined;
     target: number;
     all: boolean;
+    links: boolean;
     last: number | undefined;
 }
 
@@ -130,7 +131,13 @@ class Hours {
 
     printTable() {
         const days = this.calculateSlip();
+        const disabledColumns = [];
+        if (!this.options.links) {
+            disabledColumns.push("link");
+        }
+
         const table = new Table({
+            disabledColumns,
             columns: [
                 { name: "day", title: "Date" },
                 { name: "hours", title: "Hours" },
@@ -139,6 +146,7 @@ class Hours {
                 { name: "type", title: "Type" },
                 { name: "dayName", title: "Day" },
                 { name: "description", title: "Description" },
+                { name: "link", title: "Link" },
             ],
         });
 
@@ -175,6 +183,7 @@ class Hours {
             table.addRow({
                 dayName,
                 type,
+                link: `https://track.toggl.com/reports/detailed/${process.env.TOGGL_WORKSPACE_ID}/from/${row.day}/to/${row.day}`,
                 day: missing
                     ? chalk.bgRed.white(row.day.toString())
                     : row.day.toString(),
@@ -212,6 +221,7 @@ async function parseArgs(): Promise<{
     target: number;
     fresh: boolean;
     all: boolean;
+    links: boolean;
     last: number | undefined;
 }> {
     return await new Promise((resolve) => {
@@ -232,6 +242,14 @@ async function parseArgs(): Promise<{
                         "Show only the last N days, but still fetch from the --start-date",
                     long: "last",
                     short: "l",
+                }),
+                links: option({
+                    // @ts-ignore
+                    type: optional(boolean),
+                    description: "Show Toggl links for each day",
+                    long: "links",
+                    short: "L",
+                    defaultValue: () => false,
                 }),
                 all: option({
                     // @ts-ignore
@@ -304,6 +322,7 @@ const hours = new Hours({
     filter: args.filter,
     all: args.all,
     last: args.last,
+    links: args.links,
 });
 
 await hours.loadHoursByDay();
