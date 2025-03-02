@@ -21,20 +21,23 @@ Usage:
 
 ```
 ❯ npm ci
-❯ node src/main.mts -h
+❯ node src/main.mts --help
 toggl-slip
 
 OPTIONS:
-  --target, -t <number>    - Hour target in decimal format. Defaults to 7.5 [optional]
-  --last, -l <number>      - Show only the last N days, but still fetch from the --start-date [optional]
-  --all, -a <true/false>   - Show even the empty days [optional]
-  --fresh, -f <true/false> - Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h [optional]
-  --exclude, -x <str>      - Exclude time entries whose descriptions contain the given string [optional]
-  --start-date, -s <str>   - Start day of the slip calculation. Defaults to the start of the current week [optional]
-  --end-date, -e <str>     - End day of the slip calculation. Defaults to the current day [optional]
+  --target, -t <number>  - Hour target in decimal format. Defaults to 7.5 [optional]
+  --last, -l <number>    - Show only the last N days, but still fetch from the --start-date [optional]
+  --exclude, -x <str>    - Exclude time entries from calculcations whose descriptions contain the given string [optional]
+  --filter, -F <str>     - Filter the table to only include time entries whose descriptions contain the given string. Does not affect calculations [optional]
+  --start-date, -s <str> - Start day of the slip calculation. Defaults to the start of the current week [optional]
+  --end-date, -e <str>   - End day of the slip calculation. Defaults to the current day [optional]
 
 FLAGS:
-  --help, -h - show help
+  --links, -L    - Show Toggl links for each day
+  --projects, -p - Include project names in the descriptions
+  --all, -a      - Show even the empty days
+  --fresh, -f    - Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h
+  --help, -h     - show help
 ```
 
 <img width="724" alt="image" src="https://github.com/user-attachments/assets/035fc998-3fa6-4273-8e31-795cf453c1b9" />
