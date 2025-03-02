@@ -15,7 +15,7 @@ import {
 import { clearCache } from "./fetch-cache.mts";
 
 import prettyMilliseconds from "pretty-ms";
-import { togglEntries } from "./toggl-api.mts";
+import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
 
 async function dailyHoursInMs(options: {
@@ -48,6 +48,7 @@ interface HoursOptions {
     all: boolean;
     links: boolean;
     last: number | undefined;
+    projects: boolean;
 }
 
 class Hours {
@@ -60,15 +61,26 @@ class Hours {
     }
 
     async loadHoursByDay() {
+        const projects = this.options.projects ? await getProjects() : [];
+        const projectMap = new Map(projects.map((p) => [p.id, p]));
+
         for await (const entry of togglEntries({
             start: this.options.start,
             end: this.options.end,
         })) {
-            const description = entry.description;
+            const project = entry.project_id
+                ? projectMap.get(entry.project_id)
+                : undefined;
+
+            let description = entry.description;
+            if (project) {
+                description = `[${project.name}] ${description}`.trim();
+            }
 
             if (this.options.exclude) {
                 let excludeFound = this.options.exclude
                     .split("|")
+                    .filter((term) => term.trim().length > 0)
                     .some((exclude) =>
                         description
                             .toLowerCase()
@@ -230,6 +242,7 @@ async function parseArgs(): Promise<{
     target: number;
     fresh: boolean;
     all: boolean;
+    projects: boolean;
     links: boolean;
     last: number | undefined;
 }> {
@@ -257,6 +270,13 @@ async function parseArgs(): Promise<{
                     description: "Show Toggl links for each day",
                     long: "links",
                     short: "L",
+                    defaultValue: () => false,
+                }),
+                projects: flag({
+                    type: boolean,
+                    description: "Include project names in the descriptions",
+                    long: "projects",
+                    short: "p",
                     defaultValue: () => false,
                 }),
                 all: flag({
@@ -329,6 +349,7 @@ const hours = new Hours({
     all: args.all,
     last: args.last,
     links: args.links,
+    projects: args.projects,
 });
 
 await hours.loadHoursByDay();

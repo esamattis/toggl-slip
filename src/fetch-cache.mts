@@ -6,8 +6,8 @@ import prettyMilliseconds from "pretty-ms";
 import { pid } from "node:process";
 
 // Generates a SHA1 hash for the cache key
-function generateCacheKey(url: string, body: any): string {
-    const key = `${url}:${JSON.stringify(body)}`;
+function generateCacheKey(method: string, url: string, body: any): string {
+    const key = `${method}:${url}:${JSON.stringify(body)}`;
     return crypto.createHash("sha1").update(key).digest("hex");
 }
 
@@ -54,13 +54,13 @@ async function getCachedResponse(cacheKey: string): Promise<{
 // Saves a response to the cache
 async function saveResponseToCache(
     cacheKey: string,
-    data: any,
+    body: any,
     headers: Record<string, string>,
 ): Promise<void> {
     const cachePath = await getCachePath(cacheKey);
     const cacheContent = JSON.stringify(
         {
-            data,
+            body,
             headers,
             meta: {
                 stored: Date.now(),
@@ -84,9 +84,13 @@ async function saveResponseToCache(
 export async function fetchWithCache(
     url: string,
     options: RequestInit,
-    requestBody: any,
-): Promise<{ data: any; headers: Record<string, string> }> {
-    const cacheKey = generateCacheKey(url, requestBody);
+    requestBody?: any,
+): Promise<{ body: any; headers: Record<string, string> }> {
+    const cacheKey = generateCacheKey(
+        options.method ?? "GET",
+        url,
+        requestBody,
+    );
     const cachedResponse = await getCachedResponse(cacheKey);
 
     if (cachedResponse) {
@@ -134,5 +138,5 @@ export async function fetchWithCache(
     // Save response to cache
     await saveResponseToCache(cacheKey, data, responseHeaders);
 
-    return { data, headers: responseHeaders };
+    return { body: data, headers: responseHeaders };
 }

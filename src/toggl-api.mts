@@ -2,7 +2,6 @@ import { z } from "zod";
 import { fetchWithCache } from "./fetch-cache.mts";
 import { Day } from "./day.mts";
 
-// Define the TimeEntry schema
 const TimeEntrySchema = z.object({
     id: z.number(),
     seconds: z.number(),
@@ -12,7 +11,6 @@ const TimeEntrySchema = z.object({
     at_tz: z.string(),
 });
 
-// Define the main schema
 const TogglEntrySchema = z.object({
     user_id: z.number(),
     username: z.string(),
@@ -27,6 +25,25 @@ const TogglEntrySchema = z.object({
     time_entries: z.array(TimeEntrySchema),
     row_number: z.number(),
 });
+
+const ProjectSchema = z.object({
+    id: z.number(),
+    name: z.string(),
+});
+
+export async function getProjects() {
+    const auth = basicAuth();
+    const url = `https://api.track.toggl.com/api/v9/workspaces/${process.env.TOGGL_WORKSPACE_ID}/projects`;
+
+    const { body } = await fetchWithCache(url, {
+        method: "GET",
+        headers: {
+            Authorization: `Basic ${auth}`,
+        },
+    });
+
+    return ProjectSchema.array().parse(body);
+}
 
 function basicAuth() {
     const user = process.env.TOGGL_USERNAME;
@@ -57,19 +74,21 @@ export async function fetchDetailedReport(options: {
         body: JSON.stringify(requestBody),
     };
 
-    const { data: rawData, headers } = await fetchWithCache(
+    const { body, headers } = await fetchWithCache(
         url,
         fetchOptions,
         requestBody,
     );
 
-    const data = z.array(TogglEntrySchema).parse(rawData);
+    const data = TogglEntrySchema.array().parse(body);
 
     return {
         data,
         next: headers["x-next-row-number"] || null,
     };
 }
+
+await getProjects();
 
 export async function* togglEntries(options: { start: Day; end: Day }) {
     let next: string | null = null;
