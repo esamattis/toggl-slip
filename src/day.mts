@@ -2,11 +2,7 @@ import { format, addDays, startOfWeek } from "date-fns";
 import { holidays } from "./holidays.mts";
 
 const PUBLIC_HOLIDAYS: Map<string, string> = new Map(
-    holidays.flatMap((holiday) => {
-        if (holiday.title === "Äitienpäivä") return [];
-        if (holiday.title === "Isänpäivä") return [];
-        return [[holiday.date, holiday.title]];
-    }),
+    holidays.flatMap((holiday) => [[holiday.date, holiday.title]]),
 );
 export class Day {
     constructor(year: number, month: number, day: number) {

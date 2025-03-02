@@ -18,12 +18,6 @@ import prettyMilliseconds from "pretty-ms";
 import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
 
-async function dailyHoursInMs(options: {
-    start: Day;
-    end: Day;
-    exclude: string | undefined;
-}) {}
-
 // Format hours like "1h 30m"
 function formatHourMin(ms: number, options?: { color?: ChalkInstance }) {
     const text = prettyMilliseconds(ms, { hideSeconds: true });
