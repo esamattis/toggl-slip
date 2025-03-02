@@ -175,9 +175,12 @@ class Hours {
             ? days.slice(-this.options.last)
             : days;
         for (const row of sliced) {
+            const filter = this.options.filter;
             if (
-                this.options.filter &&
-                !row.description.includes(this.options.filter)
+                filter &&
+                !row.description.some((description) =>
+                    description.includes(filter),
+                )
             ) {
                 continue;
             }
