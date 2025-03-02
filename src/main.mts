@@ -133,9 +133,7 @@ async function slipFrom(options: {
         const extra = row.ms > 0 && row.day.isOff();
 
         let dayName: string = row.day.dayName();
-        if (missing) {
-            dayName = chalk.bgRed.white(dayName);
-        } else if (row.day.isWeekend()) {
+        if (row.day.isWeekend()) {
             dayName = chalk.gray(dayName);
         }
 
