@@ -63,6 +63,7 @@ async function slipFrom(options: {
     start: Day;
     end: Day;
     exclude: string | undefined;
+    filter: string | undefined;
     target: number;
     all: boolean;
     last: number | undefined;
@@ -120,6 +121,10 @@ async function slipFrom(options: {
 
     const sliced = options.last ? days.slice(-options.last) : days;
     for (const row of sliced) {
+        if (options.filter && !row.description.includes(options.filter)) {
+            continue;
+        }
+
         if (!options.all && row.ms === 0 && row.day.isOff()) {
             continue;
         }
@@ -172,6 +177,7 @@ async function slipFrom(options: {
 
 async function parseArgs(): Promise<{
     exclude: string | undefined;
+    filter: string | undefined;
     startDate: string;
     endDate: string;
     target: number;
@@ -218,9 +224,16 @@ async function parseArgs(): Promise<{
                 exclude: option({
                     type: optional(string),
                     description:
-                        "Exclude time entries whose descriptions contain the given string",
+                        "Exclude time entries from calculcations whose descriptions contain the given string",
                     long: "exclude",
                     short: "x",
+                }),
+                filter: option({
+                    type: optional(string),
+                    description:
+                        "Filter the table to only include time entries whose descriptions contain the given string. Does not affect calculations",
+                    long: "filter",
+                    short: "F",
                 }),
                 startDate: option({
                     type: string,
@@ -259,6 +272,7 @@ await slipFrom({
     start: Day.from(args.startDate),
     end: Day.from(args.endDate),
     exclude: args.exclude,
+    filter: args.filter,
     all: args.all,
     last: args.last,
 });
