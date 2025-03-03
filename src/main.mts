@@ -320,7 +320,15 @@ async function parseArgs(): Promise<{
                 startDate: option({
                     type: string,
                     long: "start-date",
-                    defaultValue: () => Day.startOfWeek().toString(),
+                    defaultValue: () => {
+                        if (process.env.TOGGL_SLIP_START_DATE) {
+                            return Day.from(
+                                process.env.TOGGL_SLIP_START_DATE,
+                            ).toString();
+                        }
+
+                        return Day.startOfWeek().toString();
+                    },
                     description:
                         "Start day of the slip calculation. Defaults to the start of the current week",
                     short: "s",
