@@ -43,6 +43,7 @@ interface HoursOptions {
     links: boolean;
     last: number | undefined;
     projects: boolean;
+    includeCurrentDay: boolean;
 }
 
 class Hours {
@@ -109,7 +110,9 @@ class Hours {
         const days = [];
 
         // Include the current day in the calculation
-        const end = this.options.end.nextDay();
+        const end = this.options.includeCurrentDay
+            ? this.options.end.nextDay()
+            : this.options.end;
 
         while (!current.is(end)) {
             const { ms, description } = this.hoursByDay.get(
@@ -242,6 +245,7 @@ async function parseArgs(): Promise<{
     projects: boolean;
     links: boolean;
     last: number | undefined;
+    noCurrentDay: boolean;
 }> {
     return await new Promise((resolve) => {
         const app = command({
@@ -267,6 +271,14 @@ async function parseArgs(): Promise<{
                     description: "Show Toggl links for each day",
                     long: "links",
                     short: "L",
+                    defaultValue: () => false,
+                }),
+                noCurrentDay: flag({
+                    type: boolean,
+                    description:
+                        "Do not include the current day in the calculation",
+                    long: "no-current-day",
+                    short: "C",
                     defaultValue: () => false,
                 }),
                 projects: flag({
@@ -347,6 +359,7 @@ const hours = new Hours({
     last: args.last,
     links: args.links,
     projects: args.projects,
+    includeCurrentDay: !args.noCurrentDay,
 });
 
 await hours.loadHoursByDay();
