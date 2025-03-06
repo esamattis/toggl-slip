@@ -201,6 +201,20 @@ class Hours {
                 type = chalk.gray(type);
             }
 
+            let formattedHours = "";
+            let formattedSlip = "";
+
+            if (row.hours > 0) {
+                formattedHours = formatHourMin(row.hours, {
+                    color:
+                        row.day.isOff() || row.hours >= this.options.target
+                            ? chalk.green
+                            : chalk.red,
+                });
+
+                formattedSlip = formatHourMin(row.slip) + (extra ? " 😅" : "");
+            }
+
             table.addRow({
                 dayName,
                 type,
@@ -208,13 +222,8 @@ class Hours {
                 day: missing
                     ? chalk.bgRed.white(row.day.toString())
                     : row.day.toString(),
-                hours: formatHourMin(row.hours, {
-                    color:
-                        row.day.isOff() || row.hours >= this.options.target
-                            ? chalk.green
-                            : chalk.red,
-                }),
-                slip: formatHourMin(row.slip) + (extra ? " 😅" : ""),
+                hours: formattedHours,
+                slip: formattedSlip,
                 slipTotal: formatHourMin(row.totalSlip),
                 description: Array.from(
                     new Set(row.description.filter((s) => s.trim())),
