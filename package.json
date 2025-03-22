@@ -6,6 +6,9 @@
     "scripts": {
         "start": "node src/main.mts"
     },
+    "bin": {
+        "toggl-slip": "src/main.mts"
+    },
     "author": "",
     "license": "ISC",
     "description": "",

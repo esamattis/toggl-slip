@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { format, addDays, startOfWeek } from "date-fns";
 import chalk, { type ChalkInstance } from "chalk";
 import { Table } from "console-table-printer";
