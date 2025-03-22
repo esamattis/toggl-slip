@@ -298,9 +298,11 @@ async function parseArgs(): Promise<{
                     long: "initial-hours",
                     short: "i",
                     defaultValue: () => {
-                        if (process.env.TOGGL_INITIAL_HOURS) {
+                        if (process.env.TOGGL_SLIP_INITIAL_HOURS) {
                             return (
-                                parseFloat(process.env.TOGGL_INITIAL_HOURS) || 0
+                                parseFloat(
+                                    process.env.TOGGL_SLIP_INITIAL_HOURS,
+                                ) || 0
                             );
                         }
 
