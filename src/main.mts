@@ -45,6 +45,7 @@ interface HoursOptions {
     last: number | undefined;
     projects: boolean;
     includeCurrentDay: boolean;
+    initialHours: number;
 }
 
 class Hours {
@@ -105,7 +106,7 @@ class Hours {
 
     calculateSlip() {
         let current = this.options.start;
-        let totalSlip = 0;
+        let totalSlip = this.options.initialHours * 60 * 60 * 1000;
         let totalHours = 0;
 
         const days = [];
@@ -131,6 +132,7 @@ class Hours {
             }
 
             totalHours += ms;
+            console.log("totalSlip:", totalSlip);
             totalSlip += slip;
 
             days.push({
@@ -256,6 +258,7 @@ async function parseArgs(): Promise<{
     links: boolean;
     last: number | undefined;
     noCurrentDay: boolean;
+    initialHours: number | undefined;
 }> {
     return await new Promise((resolve) => {
         const app = command({
@@ -275,6 +278,21 @@ async function parseArgs(): Promise<{
                         "Show only the last N days, but still fetch from the --start-date",
                     long: "last",
                     short: "l",
+                }),
+                initialHours: option({
+                    type: optional(number),
+                    description: "Initial hours to start the calculation from",
+                    long: "initial-hours",
+                    short: "i",
+                    defaultValue: () => {
+                        if (process.env.TOGGL_INITIAL_HOURS) {
+                            return (
+                                parseFloat(process.env.TOGGL_INITIAL_HOURS) || 0
+                            );
+                        }
+
+                        return 0;
+                    },
                 }),
                 links: flag({
                     type: boolean,
@@ -378,6 +396,7 @@ const hours = new Hours({
     links: args.links,
     projects: args.projects,
     includeCurrentDay: !args.noCurrentDay,
+    initialHours: args.initialHours || 0,
 });
 
 await hours.loadHoursByDay();
