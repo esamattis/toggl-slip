@@ -20,8 +20,18 @@ import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
 
 // Format hours like "1h 30m"
-function formatHourMin(ms: number, options?: { color?: ChalkInstance }) {
-    const text = prettyMilliseconds(ms, { hideSeconds: true });
+function formatHours(
+    ms: number,
+    options?: { color?: ChalkInstance; decimal: boolean },
+) {
+    let text;
+
+    if (options?.decimal) {
+        text = (ms / 3600000).toFixed(2);
+    } else {
+        text = prettyMilliseconds(ms, { hideSeconds: true });
+    }
+
     // const text = hours.toFixed(2);
 
     if (options?.color) {
@@ -149,7 +159,8 @@ class Hours {
         return days;
     }
 
-    printTable() {
+    printTable(options: { decimal: boolean }) {
+        const decimal = options.decimal;
         const days = this.calculateSlip();
         const disabledColumns = [];
         if (!this.options.links) {
@@ -207,14 +218,16 @@ class Hours {
             let formattedSlip = "";
 
             if (row.hours > 0) {
-                formattedHours = formatHourMin(row.hours, {
+                formattedHours = formatHours(row.hours, {
+                    decimal,
                     color:
                         row.day.isOff() || row.hours >= this.options.target
                             ? chalk.green
                             : chalk.red,
                 });
 
-                formattedSlip = formatHourMin(row.slip) + (extra ? " 😅" : "");
+                formattedSlip =
+                    formatHours(row.slip, { decimal }) + (extra ? " 😅" : "");
             }
 
             table.addRow({
@@ -226,7 +239,7 @@ class Hours {
                     : row.day.toString(),
                 hours: formattedHours,
                 slip: formattedSlip,
-                slipTotal: formatHourMin(row.totalSlip),
+                slipTotal: formatHours(row.totalSlip, { decimal }),
                 description: Array.from(
                     new Set(row.description.filter((s) => s.trim())),
                 ).join(", "),
@@ -240,7 +253,7 @@ class Hours {
         const totalSlip = days.at(-1)?.totalSlip || 0;
 
         console.log(
-            `${formatHourMin(totalHours)} in ${workedDays} days with slip of ${formatHourMin(totalSlip)}`,
+            `${formatHours(totalHours, { decimal })} in ${workedDays} days with slip of ${formatHours(totalSlip, { decimal })}`,
         );
     }
 }
@@ -258,6 +271,7 @@ async function parseArgs(): Promise<{
     last: number | undefined;
     noCurrentDay: boolean;
     initialHours: number | undefined;
+    decimal: boolean;
 }> {
     return await new Promise((resolve) => {
         const app = command({
@@ -313,6 +327,14 @@ async function parseArgs(): Promise<{
                     description: "Include project names in the descriptions",
                     long: "projects",
                     short: "p",
+                    defaultValue: () => false,
+                }),
+                decimal: flag({
+                    type: boolean,
+                    description:
+                        "Show decimal hours instead of hours and minutes",
+                    long: "decimal",
+                    short: "d",
                     defaultValue: () => false,
                 }),
                 all: flag({
@@ -399,4 +421,6 @@ const hours = new Hours({
 });
 
 await hours.loadHoursByDay();
-hours.printTable();
+hours.printTable({
+    decimal: args.decimal,
+});
