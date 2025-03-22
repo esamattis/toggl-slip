@@ -357,7 +357,7 @@ async function parseArgs(): Promise<{
                 exclude: option({
                     type: optional(string),
                     description:
-                        "Exclude time entries from calculcations whose descriptions contain the given string",
+                        "Exclude time entries from calculations whose descriptions contain the given string",
                     long: "exclude",
                     short: "x",
                 }),
