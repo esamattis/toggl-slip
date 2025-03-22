@@ -132,7 +132,6 @@ class Hours {
             }
 
             totalHours += ms;
-            console.log("totalSlip:", totalSlip);
             totalSlip += slip;
 
             days.push({
