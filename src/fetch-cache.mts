@@ -35,7 +35,7 @@ async function getCachePath(cacheKey: string): Promise<string> {
 
 // Checks if a cached response exists and returns it if valid
 async function getCachedResponse(cacheKey: string): Promise<{
-    data: any;
+    body: any;
     headers: Record<string, string>;
     meta: { stored: number };
 } | null> {
