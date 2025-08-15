@@ -20,7 +20,7 @@ import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
 
 // Format hours like "1h 30m"
-function formatHours(
+function formatTime(
     ms: number,
     options?: { color?: ChalkInstance; decimal: boolean },
 ) {
@@ -33,6 +33,56 @@ function formatHours(
     }
 
     // const text = hours.toFixed(2);
+
+    if (options?.color) {
+        return options.color(text);
+    }
+
+    if (ms < 0) {
+        return chalk.red(text);
+    }
+    return chalk.green(text);
+}
+
+/**
+ * format milliseconds only in hours and minutes
+ **/
+function formatHours(ms: number, options?: { color?: ChalkInstance }): string {
+    const hours = Math.floor(ms / 3600000);
+    const minutes = Math.floor((ms % 3600000) / 60000);
+
+    let text = "";
+    if (hours > 0) {
+        text += `${hours}h`;
+        if (minutes > 0) {
+            text += ` ${minutes}m`;
+        }
+    } else if (minutes > 0) {
+        text = `${minutes}m`;
+    } else {
+        text = "0m";
+    }
+
+    if (options?.color) {
+        return options.color(text);
+    }
+
+    if (ms < 0) {
+        return chalk.red(text);
+    }
+    return chalk.green(text);
+}
+
+/**
+ * Format how many workdays are in the given milliseconds.
+ **/
+function formatWorkdayCount(
+    ms: number,
+    workdayDuration: number,
+    options?: { color?: ChalkInstance },
+): string {
+    const days = workdayDuration > 0 ? ms / workdayDuration : 0;
+    const text = `${days.toFixed(2)}`;
 
     if (options?.color) {
         return options.color(text);
@@ -218,7 +268,7 @@ class Hours {
             let formattedSlip = "";
 
             if (row.hours > 0) {
-                formattedHours = formatHours(row.hours, {
+                formattedHours = formatTime(row.hours, {
                     decimal,
                     color:
                         row.day.isOff() || row.hours >= this.options.target
@@ -227,7 +277,7 @@ class Hours {
                 });
 
                 formattedSlip =
-                    formatHours(row.slip, { decimal }) + (extra ? " 😅" : "");
+                    formatTime(row.slip, { decimal }) + (extra ? " 😅" : "");
             }
 
             table.addRow({
@@ -239,7 +289,7 @@ class Hours {
                     : row.day.toString(),
                 hours: formattedHours,
                 slip: formattedSlip,
-                slipTotal: formatHours(row.totalSlip, { decimal }),
+                slipTotal: formatTime(row.totalSlip, { decimal }),
                 description: Array.from(
                     new Set(row.description.filter((s) => s.trim())),
                 ).join(", "),
@@ -253,7 +303,10 @@ class Hours {
         const totalSlip = days.at(-1)?.totalSlip || 0;
 
         console.log(
-            `${formatHours(totalHours, { decimal })} in ${workedDays} days with slip of ${formatHours(totalSlip, { decimal })}`,
+            `${formatTime(totalHours, { decimal })} in ${workedDays} days with slip of ${formatHours(totalSlip)} that is ${formatWorkdayCount(
+                totalSlip,
+                this.options.target,
+            )} of workdays.`,
         );
     }
 }
