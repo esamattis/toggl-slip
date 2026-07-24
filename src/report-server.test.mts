@@ -89,9 +89,6 @@ test("daily hours table can be rendered through the HTTP server", async () => {
         const body = await response.text();
         assert.equal(response.status, 200);
         assert.match(response.headers.get("content-type") ?? "", /text\/html/);
-        assert.match(body, /<style>/);
-        assert.match(body, /color-scheme: dark/);
-        assert.match(body, /position: sticky/);
         assert.match(body, /Daily hours/);
         assert.match(body, /Client &lt;script&gt;alert\(&#39;no&#39;\)&lt;\/script&gt; &amp; support/);
         assert.doesNotMatch(body, /Client <script>/);

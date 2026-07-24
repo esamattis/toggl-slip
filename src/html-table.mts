@@ -33,8 +33,9 @@ export function renderHtmlTable(table: TableModel): string {
     <style>
         :root { color-scheme: dark; --bg: #0b0d12; --panel: #131720; --panel-2: #181d28; --line: #2a3140; --text: #e8ecf4; --muted: #8993a5; --green: #67e8a5; --red: #ff7b86; --yellow: #f6c85f; --accent: #8ba7ff; }
         * { box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
         body { margin: 0; min-width: 320px; background: radial-gradient(circle at 15% -10%, #20283a 0, transparent 34rem), var(--bg); color: var(--text); font: 15px/1.45 ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-        main { width: min(1500px, calc(100% - 32px)); margin: 0 auto; padding: 56px 0 72px; }
+        main { display: flex; flex-direction: column; width: min(1500px, calc(100% - 32px)); height: 100dvh; margin: 0 auto; padding: 56px 0 24px; }
         header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
         h1 { margin: 0; font-size: clamp(2rem, 5vw, 4rem); line-height: .95; letter-spacing: -.055em; }
         .eyebrow { margin: 0 0 10px; color: var(--accent); font: 700 12px/1 ui-monospace, SFMono-Regular, Consolas, monospace; letter-spacing: .16em; text-transform: uppercase; }
@@ -43,7 +44,7 @@ export function renderHtmlTable(table: TableModel): string {
         .stat { padding: 18px 20px; background: linear-gradient(145deg, var(--panel-2), var(--panel)); }
         .stat-label { display: block; margin-bottom: 5px; color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
         .stat-value { font: 650 20px/1.2 ui-monospace, SFMono-Regular, Consolas, monospace; }
-        .table-wrap { max-height: max(360px, calc(100vh - 240px)); overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: rgba(19, 23, 32, .92); box-shadow: 0 24px 80px rgba(0, 0, 0, .28); }
+        .table-wrap { flex: 1; min-height: 0; overflow: auto; border: 1px solid var(--line); border-radius: 12px; background: rgba(19, 23, 32, .92); box-shadow: 0 24px 80px rgba(0, 0, 0, .28); }
         table { width: 100%; border-collapse: collapse; white-space: nowrap; }
         th { position: sticky; top: 0; z-index: 1; padding: 13px 16px; border-bottom: 1px solid var(--line); background: #171c26; color: var(--muted); font-size: 10px; letter-spacing: .12em; text-align: left; text-transform: uppercase; }
         td { padding: 12px 16px; border-bottom: 1px solid rgba(42, 49, 64, .7); font-variant-numeric: tabular-nums; }
@@ -62,7 +63,7 @@ export function renderHtmlTable(table: TableModel): string {
         .celebration { background: var(--green); }
         .empty { padding: 40px 20px; color: var(--muted); text-align: center; }
         footer { margin-top: 14px; color: #636d7e; font-size: 12px; text-align: right; }
-        @media (max-width: 700px) { main { width: min(100% - 20px, 1500px); padding-top: 32px; } header { display: block; } .range { margin-top: 14px; } .summary { grid-template-columns: 1fr; } .stat { padding: 14px 16px; } .table-wrap { max-height: 70vh; } th, td { padding: 11px 13px; } }
+        @media (max-width: 700px) { main { width: min(100% - 20px, 1500px); padding: 32px 0 16px; } header { display: block; margin-bottom: 16px; } .range { margin-top: 14px; } .summary { grid-template-columns: 1fr; margin-bottom: 12px; } .stat { padding: 10px 16px; } th, td { padding: 11px 13px; } }
     </style>
 </head>
 <body>
