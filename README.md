@@ -43,6 +43,20 @@ The explicit `report` subcommand is also available:
 pnpm start report --start-date 2026-07-01 --end-date 2026-07-24
 ```
 
+## Web Report
+
+Start a local HTTP server for a styled dark-theme version of the daily hours
+table:
+
+```sh
+pnpm start serve
+pnpm start serve --port 8080 --start-date 2026-07-01
+```
+
+The report is available at `http://127.0.0.1:3000` by default. The `serve`
+command accepts the same report options as the terminal report, plus `--host`
+and `--port`.
+
 ## Delete Data
 
 Delete all entries for a date:

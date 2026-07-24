@@ -41,6 +41,7 @@ test("CLI help lists subcommands and delete removes a complete day", async () =>
     try {
         const help = await runCli(["--help"], home);
         assert.match(help.stdout, /report - Calculate hour slip/);
+        assert.match(help.stdout, /serve - Serve the daily hours report/);
         assert.match(help.stdout, /load - Replace database entries/);
         assert.match(help.stdout, /delete - Delete all database entries/);
 
