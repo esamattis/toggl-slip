@@ -196,7 +196,7 @@ class Hours {
             if (row.hours > 0) {
                 formattedHours = formatTime(row.hours, {
                     decimal,
-                    workdayDuration: this.options.target,
+                    workdayDuration: 0,
                     color:
                         row.day.isOff() || row.hours >= this.options.target
                             ? chalk.green
@@ -206,7 +206,11 @@ class Hours {
                 formattedSlip =
                     formatTime(row.slip, {
                         decimal,
-                        workdayDuration: this.options.target,
+                        workdayDuration: 0,
+                        color:
+                            row.slip > 5 * 60 * 60 * 1000
+                                ? chalk.bgGreen.white
+                                : undefined,
                     }) + (extra ? " 😅" : "");
             }
 
