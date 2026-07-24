@@ -4,7 +4,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { loadCsvFiles } from "./csv-loader.mts";
-import { openDatabase, readHoursByDay } from "./database.mts";
+import {
+    deleteDayEntries,
+    openDatabase,
+    readHoursByDay,
+} from "./database.mts";
 
 const HEADER =
     '"Description","Duration","Member","Email","Project","Tags","Start date","Start time","Stop date","Stop time"\n';
@@ -105,6 +109,17 @@ test("CSV loads replace complete days and SQL queries filter entries", async () 
                 { day: "2026-01-05", ms: 900_000 },
                 { day: "2026-01-06", ms: 1_800_000 },
             ],
+        );
+
+        assert.equal(deleteDayEntries(database, "2026-01-05"), 1);
+        assert.equal(deleteDayEntries(database, "2026-01-05"), 0);
+        assert.deepEqual(
+            readHoursByDay(database, {
+                start: "2026-01-05",
+                end: "2026-01-06",
+                projects: false,
+            }).map(({ day, ms }) => ({ day, ms })),
+            [{ day: "2026-01-06", ms: 1_800_000 }],
         );
     } finally {
         database.close();

@@ -37,8 +37,22 @@ pnpm start --start-date 2026-07-01 --end-date 2026-07-24
 pnpm start --projects --exclude "Vacation|Sick" --decimal
 ```
 
-Use `pnpm start --help` for all report options and
-`pnpm start load --help` for CSV loading help.
+The explicit `report` subcommand is also available:
+
+```sh
+pnpm start report --start-date 2026-07-01 --end-date 2026-07-24
+```
+
+## Delete Data
+
+Delete all entries for a date:
+
+```sh
+pnpm start delete 2026-07-14
+```
+
+Use `pnpm start --help` to list subcommands and `<subcommand> --help` for
+command-specific options, such as `pnpm start report --help`.
 
 ## Environment Variables
 

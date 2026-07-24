@@ -107,6 +107,13 @@ export function replaceDayEntries(
     }
 }
 
+export function deleteDayEntries(database: DatabaseSync, day: string): number {
+    const result = database
+        .prepare("DELETE FROM time_entries WHERE day = ?")
+        .run(day);
+    return Number(result.changes);
+}
+
 export function readHoursByDay(
     database: DatabaseSync,
     options: {
