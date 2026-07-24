@@ -31,9 +31,20 @@ const ProjectSchema = z.object({
     name: z.string(),
 });
 
+function requiredEnv(name: string) {
+    const value = process.env[name];
+
+    if (!value) {
+        throw new Error(`Missing required environment variable: ${name}`);
+    }
+
+    return value;
+}
+
 export async function getProjects() {
     const auth = basicAuth();
-    const url = `https://api.track.toggl.com/api/v9/workspaces/${process.env.TOGGL_WORKSPACE_ID}/projects`;
+    const workspaceId = requiredEnv("TOGGL_WORKSPACE_ID");
+    const url = `https://api.track.toggl.com/api/v9/workspaces/${workspaceId}/projects`;
 
     const { body } = await fetchWithCache(url, {
         method: "GET",
@@ -46,8 +57,8 @@ export async function getProjects() {
 }
 
 function basicAuth() {
-    const user = process.env.TOGGL_USERNAME;
-    const password = process.env.TOGGL_PASSWORD;
+    const user = requiredEnv("TOGGL_USERNAME");
+    const password = requiredEnv("TOGGL_PASSWORD");
     return Buffer.from(`${user}:${password}`).toString("base64");
 }
 
@@ -57,7 +68,8 @@ export async function fetchDetailedReport(options: {
     end: Day;
 }) {
     const auth = basicAuth();
-    const url = `https://api.track.toggl.com/reports/api/v3/workspace/${process.env.TOGGL_WORKSPACE_ID}/search/time_entries`;
+    const workspaceId = requiredEnv("TOGGL_WORKSPACE_ID");
+    const url = `https://api.track.toggl.com/reports/api/v3/workspace/${workspaceId}/search/time_entries`;
 
     const requestBody = {
         start_date: options.start.toString(),

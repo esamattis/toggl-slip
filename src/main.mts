@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { existsSync } from "node:fs";
+import { loadEnvFile } from "node:process";
 import { format, addDays, startOfWeek } from "date-fns";
 import chalk, { type ChalkInstance } from "chalk";
 import { Table } from "console-table-printer";
@@ -18,6 +20,10 @@ import { clearCache } from "./fetch-cache.mts";
 import prettyMilliseconds from "pretty-ms";
 import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
+
+if (existsSync(".env")) {
+    loadEnvFile();
+}
 
 // Format hours like "1h 30m"
 function formatTime(
