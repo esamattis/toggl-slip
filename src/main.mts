@@ -418,6 +418,26 @@ if (cliArgs[0] === "load") {
     }
 } else {
     const args = await parseReportArgs(cliArgs);
+    const hasOption = (long: string, short: string) =>
+        cliArgs.some(
+            (argument) =>
+                argument === long ||
+                argument.startsWith(`${long}=`) ||
+                argument === short,
+        );
+    const activeFilters = [
+        process.env.TOGGL_SLIP_START_DATE ||
+        hasOption("--start-date", "-s")
+            ? `--start-date=${JSON.stringify(args.startDate)}`
+            : undefined,
+        process.env.TOGGL_SLIP_INITIAL_HOURS ||
+        hasOption("--initial-hours", "-i")
+            ? `--initial-hours=${args.initialHours ?? 0}`
+            : undefined,
+        args.exclude ? `--exclude=${JSON.stringify(args.exclude)}` : undefined,
+        args.filter ? `--filter=${JSON.stringify(args.filter)}` : undefined,
+    ].filter((value) => value !== undefined);
+
     const hours = new Hours({
         target: args.target * 60 * 60 * 1000,
         start: Day.from(args.startDate),
@@ -438,6 +458,9 @@ if (cliArgs[0] === "load") {
         hours.printTable({
             decimal: args.decimal,
         });
+        if (activeFilters.length > 0) {
+            console.log(`Active filters: ${activeFilters.join(", ")}`);
+        }
     } finally {
         database.close();
     }

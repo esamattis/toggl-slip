@@ -40,5 +40,22 @@ pnpm start --projects --exclude "Vacation|Sick" --decimal
 Use `pnpm start --help` for all report options and
 `pnpm start load --help` for CSV loading help.
 
+## Environment Variables
+
+The CLI loads `.env` from the current directory when it exists.
+
+| Variable | Purpose |
+| --- | --- |
+| `TOGGL_SLIP_START_DATE` | Default `--start-date` in `YYYY-MM-DD` format. |
+| `TOGGL_SLIP_INITIAL_HOURS` | Default decimal value for `--initial-hours`. |
+| `TOGGL_WORKSPACE_ID` | Workspace used by `--links`. |
+| `TOGGL_USERNAME` | Username for the currently unused Toggl API client. |
+| `TOGGL_PASSWORD` | Password for the currently unused Toggl API client. |
+
+Environment variables provide defaults. Explicit command-line options override
+their corresponding environment variables.
+
+`TOGGL_WORKSPACE_ID` is also required by the currently unused API client.
+
 The existing Toggl API implementation remains in the source tree but is not used
 by the report or CSV loading commands.
