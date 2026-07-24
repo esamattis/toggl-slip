@@ -17,7 +17,7 @@ import {
 
 import { clearCache } from "./fetch-cache.mts";
 
-import prettyMilliseconds from "pretty-ms";
+import { formatDuration } from "./format-duration.mts";
 import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
 
@@ -25,72 +25,23 @@ if (existsSync(".env")) {
     loadEnvFile();
 }
 
-// Format hours like "1h 30m"
 function formatTime(
     ms: number,
-    options?: { color?: ChalkInstance; decimal: boolean },
+    options: {
+        color?: ChalkInstance;
+        decimal: boolean;
+        workdayDuration: number;
+    },
 ) {
     let text;
 
-    if (options?.decimal) {
+    if (options.decimal) {
         text = (ms / 3600000).toFixed(2);
     } else {
-        text = prettyMilliseconds(ms, { hideSeconds: true });
+        text = formatDuration(ms, options.workdayDuration);
     }
 
-    // const text = hours.toFixed(2);
-
-    if (options?.color) {
-        return options.color(text);
-    }
-
-    if (ms < 0) {
-        return chalk.red(text);
-    }
-    return chalk.green(text);
-}
-
-/**
- * format milliseconds only in hours and minutes
- **/
-function formatHours(ms: number, options?: { color?: ChalkInstance }): string {
-    const hours = Math.floor(ms / 3600000);
-    const minutes = Math.floor((ms % 3600000) / 60000);
-
-    let text = "";
-    if (hours > 0) {
-        text += `${hours}h`;
-        if (minutes > 0) {
-            text += ` ${minutes}m`;
-        }
-    } else if (minutes > 0) {
-        text = `${minutes}m`;
-    } else {
-        text = "0m";
-    }
-
-    if (options?.color) {
-        return options.color(text);
-    }
-
-    if (ms < 0) {
-        return chalk.red(text);
-    }
-    return chalk.green(text);
-}
-
-/**
- * Format how many workdays are in the given milliseconds.
- **/
-function formatWorkdayCount(
-    ms: number,
-    workdayDuration: number,
-    options?: { color?: ChalkInstance },
-): string {
-    const days = workdayDuration > 0 ? ms / workdayDuration : 0;
-    const text = `${days.toFixed(2)}`;
-
-    if (options?.color) {
+    if (options.color) {
         return options.color(text);
     }
 
@@ -276,6 +227,7 @@ class Hours {
             if (row.hours > 0) {
                 formattedHours = formatTime(row.hours, {
                     decimal,
+                    workdayDuration: this.options.target,
                     color:
                         row.day.isOff() || row.hours >= this.options.target
                             ? chalk.green
@@ -283,7 +235,10 @@ class Hours {
                 });
 
                 formattedSlip =
-                    formatTime(row.slip, { decimal }) + (extra ? " 😅" : "");
+                    formatTime(row.slip, {
+                        decimal,
+                        workdayDuration: this.options.target,
+                    }) + (extra ? " 😅" : "");
             }
 
             table.addRow({
@@ -295,7 +250,10 @@ class Hours {
                     : row.day.toString(),
                 hours: formattedHours,
                 slip: formattedSlip,
-                slipTotal: formatTime(row.totalSlip, { decimal }),
+                slipTotal: formatTime(row.totalSlip, {
+                    decimal,
+                    workdayDuration: this.options.target,
+                }),
                 description: Array.from(
                     new Set(row.description.filter((s) => s.trim())),
                 ).join(", "),
@@ -309,10 +267,13 @@ class Hours {
         const totalSlip = days.at(-1)?.totalSlip || 0;
 
         console.log(
-            `${formatTime(totalHours, { decimal })} in ${workedDays} days with slip of ${formatHours(totalSlip)} that is ${formatWorkdayCount(
-                totalSlip,
-                this.options.target,
-            )} of workdays.`,
+            `${formatTime(totalHours, {
+                decimal,
+                workdayDuration: this.options.target,
+            })} in ${workedDays} days with slip of ${formatTime(totalSlip, {
+                decimal: false,
+                workdayDuration: this.options.target,
+            })}.`,
         );
     }
 }
