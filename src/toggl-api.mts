@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { addDays } from "date-fns";
 import { fetchWithCache } from "./fetch-cache.mts";
 import { Day } from "./day.mts";
+
+const MAX_REPORT_RANGE_DAYS = 366;
 
 const TimeEntrySchema = z.object({
     id: z.number(),
@@ -101,23 +104,35 @@ export async function fetchDetailedReport(options: {
 }
 
 export async function* togglEntries(options: { start: Day; end: Day }) {
-    let next: string | null = null;
+    let start = options.start;
 
-    while (true) {
-        const res = await fetchDetailedReport({
-            next: next,
-            start: options.start,
-            end: options.end,
-        });
+    while (!start.isAfter(options.end)) {
+        const maximumEnd = Day.from(
+            addDays(start.toDate(), MAX_REPORT_RANGE_DAYS - 1),
+        );
+        const end = maximumEnd.isAfter(options.end)
+            ? options.end
+            : maximumEnd;
+        let next: string | null = null;
 
-        for (const entry of res.data) {
-            yield entry;
-        }
+        while (true) {
+            const res = await fetchDetailedReport({
+                next,
+                start,
+                end,
+            });
 
-        if (res.next) {
+            for (const entry of res.data) {
+                yield entry;
+            }
+
+            if (!res.next) {
+                break;
+            }
+
             next = res.next;
-        } else {
-            break;
         }
+
+        start = end.nextDay();
     }
 }
