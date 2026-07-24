@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { existsSync } from "node:fs";
 import { loadEnvFile } from "node:process";
-import { format, addDays, startOfWeek } from "date-fns";
 import chalk, { type ChalkInstance } from "chalk";
 import { Table } from "console-table-printer";
 import {
@@ -13,13 +12,14 @@ import {
     boolean,
     number,
     flag,
+    restPositionals,
 } from "cmd-ts";
-
-import { clearCache } from "./fetch-cache.mts";
+import type { DatabaseSync } from "node:sqlite";
 
 import { formatDuration } from "./format-duration.mts";
-import { getProjects, togglEntries } from "./toggl-api.mts";
 import { Day } from "./day.mts";
+import { databasePath, openDatabase, readHoursByDay } from "./database.mts";
+import { loadCsvFiles } from "./csv-loader.mts";
 
 if (existsSync(".env")) {
     loadEnvFile();
@@ -67,57 +67,29 @@ interface HoursOptions {
 
 class Hours {
     options: HoursOptions;
-    hoursByDay: Map<string, { ms: number; description: string[] }>;
+    hoursByDay: Map<
+        string,
+        { ms: number; description: string[]; matchesFilter: boolean }
+    >;
 
     constructor(options: HoursOptions) {
         this.options = options;
         this.hoursByDay = new Map();
     }
 
-    async loadHoursByDay() {
-        const projects = this.options.projects ? await getProjects() : [];
-        const projectMap = new Map(projects.map((p) => [p.id, p]));
-
-        for await (const entry of togglEntries({
-            start: this.options.start,
-            end: this.options.end,
+    loadHoursByDay(database: DatabaseSync) {
+        for (const row of readHoursByDay(database, {
+            start: this.options.start.toString(),
+            end: this.options.end.toString(),
+            exclude: this.options.exclude,
+            filter: this.options.filter,
+            projects: this.options.projects,
         })) {
-            const project = entry.project_id
-                ? projectMap.get(entry.project_id)
-                : undefined;
-
-            let description = entry.description;
-            if (project) {
-                description = `[${project.name}] ${description}`.trim();
-            }
-
-            if (this.options.exclude) {
-                let excludeFound = this.options.exclude
-                    .split("|")
-                    .filter((term) => term.trim().length > 0)
-                    .some((exclude) =>
-                        description
-                            .toLowerCase()
-                            .includes(exclude.toLowerCase()),
-                    );
-
-                if (excludeFound) {
-                    continue;
-                }
-            }
-
-            for (const timeEntry of entry.time_entries) {
-                const date = format(timeEntry.start, "yyyy-MM-dd");
-                const current = this.hoursByDay.get(date) || {
-                    ms: 0,
-                    description: [],
-                };
-                const ms = timeEntry.seconds * 1000;
-                this.hoursByDay.set(date, {
-                    ms: current.ms + ms,
-                    description: [...current.description, description],
-                });
-            }
+            this.hoursByDay.set(row.day, {
+                ms: row.ms,
+                description: row.descriptions,
+                matchesFilter: row.matchesFilter,
+            });
         }
     }
 
@@ -134,11 +106,12 @@ class Hours {
             : this.options.end;
 
         while (!current.is(end)) {
-            const { ms, description } = this.hoursByDay.get(
+            const { ms, description, matchesFilter } = this.hoursByDay.get(
                 current.toString(),
             ) || {
                 ms: 0,
                 description: [],
+                matchesFilter: false,
             };
 
             let slip;
@@ -155,6 +128,7 @@ class Hours {
                 day: current,
                 hours: ms,
                 description,
+                matchesFilter,
                 slip,
                 totalHours,
                 totalSlip,
@@ -193,12 +167,7 @@ class Hours {
             : days;
         for (const row of sliced) {
             const filter = this.options.filter;
-            if (
-                filter &&
-                !row.description.some((description) =>
-                    description.includes(filter),
-                )
-            ) {
+            if (filter && !row.matchesFilter) {
                 continue;
             }
 
@@ -278,13 +247,12 @@ class Hours {
     }
 }
 
-async function parseArgs(): Promise<{
+async function parseReportArgs(argv: string[]): Promise<{
     exclude: string | undefined;
     filter: string | undefined;
     startDate: string;
     endDate: string;
     target: number;
-    fresh: boolean;
     all: boolean;
     projects: boolean;
     links: boolean;
@@ -296,6 +264,8 @@ async function parseArgs(): Promise<{
     return await new Promise((resolve) => {
         const app = command({
             name: "toggl-slip",
+            description:
+                "Calculate hour slip from SQLite. Use `toggl-slip load <files...>` to import CSV exports.",
             args: {
                 target: option({
                     type: number,
@@ -308,7 +278,7 @@ async function parseArgs(): Promise<{
                 last: option({
                     type: optional(number),
                     description:
-                        "Show only the last N days, but still fetch from the --start-date",
+                        "Show only the last N days, but still calculate from the --start-date",
                     long: "last",
                     short: "l",
                 }),
@@ -366,14 +336,6 @@ async function parseArgs(): Promise<{
                     description: "Show even the empty days",
                     defaultValue: () => false,
                 }),
-                fresh: flag({
-                    type: boolean,
-                    long: "fresh",
-                    short: "f",
-                    description:
-                        "Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h",
-                    defaultValue: () => false,
-                }),
                 exclude: option({
                     type: optional(string),
                     description:
@@ -418,31 +380,65 @@ async function parseArgs(): Promise<{
             },
         });
 
-        run(app, process.argv.slice(2));
+        run(app, argv);
     });
 }
 
-const args = await parseArgs();
+async function parseLoadArgs(argv: string[]): Promise<string[]> {
+    return await new Promise((resolve) => {
+        const app = command({
+            name: "toggl-slip load",
+            description:
+                "Replace database entries with authoritative Toggl CSV exports",
+            args: {
+                files: restPositionals({
+                    type: string,
+                    displayName: "files",
+                    description: "One or more Toggl .csv export files",
+                }),
+            },
+            handler: ({ files }) => resolve(files),
+        });
 
-if (args.fresh) {
-    await clearCache();
+        run(app, argv);
+    });
 }
 
-const hours = new Hours({
-    target: args.target * 60 * 60 * 1000,
-    start: Day.from(args.startDate),
-    end: Day.from(args.endDate),
-    exclude: args.exclude,
-    filter: args.filter,
-    all: args.all,
-    last: args.last,
-    links: args.links,
-    projects: args.projects,
-    includeCurrentDay: !args.noCurrentDay,
-    initialHours: args.initialHours || 0,
-});
+const cliArgs = process.argv.slice(2);
+if (cliArgs[0] === "load") {
+    const files = await parseLoadArgs(cliArgs.slice(1));
+    const database = openDatabase();
+    try {
+        const result = loadCsvFiles(database, files);
+        console.log(
+            `Loaded ${result.entries} entries for ${result.days} days from ${result.files} files into ${databasePath}.`,
+        );
+    } finally {
+        database.close();
+    }
+} else {
+    const args = await parseReportArgs(cliArgs);
+    const hours = new Hours({
+        target: args.target * 60 * 60 * 1000,
+        start: Day.from(args.startDate),
+        end: Day.from(args.endDate),
+        exclude: args.exclude,
+        filter: args.filter,
+        all: args.all,
+        last: args.last,
+        links: args.links,
+        projects: args.projects,
+        includeCurrentDay: !args.noCurrentDay,
+        initialHours: args.initialHours || 0,
+    });
 
-await hours.loadHoursByDay();
-hours.printTable({
-    decimal: args.decimal,
-});
+    const database = openDatabase();
+    try {
+        hours.loadHoursByDay(database);
+        hours.printTable({
+            decimal: args.decimal,
+        });
+    } finally {
+        database.close();
+    }
+}

@@ -1,42 +1,44 @@
+# Toggl Track Hour Slip Calculator
 
-# Toggl Track – Hour Slip Calculator
+Calculate hour slip (tuntiliukuma, liukuma-aika, tuntikertyma) from Toggl Track
+CSV exports. Finnish public holidays and weekends are handled automatically.
 
-Calculate the current hour slip (tuntiliukuma, liukuma-aika, tuntikertymä) for a
-Toggl Track workspace. Handles finnish holidays (arkipyhät) and weekends.
-Configure following environment variables:
+Requires Node.js 26 and pnpm. The versions used by the project are configured in
+[`mise.toml`](mise.toml) and [`package.json`](package.json).
 
-```
-TOGGL_USERNAME=""
-TOGGL_PASSWORD=""
-TOGGL_WORKSPACE_ID=""
-```
+## Install
 
-The `TOGGL_WORKSPACE_ID` is the id of the workspace you want to calculate the hour
-slip for. You can find it in the URL of the workspace in Toggl Track.
-
-Use Node.js 23. See [mise.toml](mise.toml)
-
-Usage:
-
-```
-❯ npm ci
-❯ node src/main.mts --help
-toggl-slip
-
-OPTIONS:
-  --target, -t <number>  - Hour target in decimal format. Defaults to 7.5 [optional]
-  --last, -l <number>    - Show only the last N days, but still fetch from the --start-date [optional]
-  --exclude, -x <str>    - Exclude time entries from calculcations whose descriptions contain the given string [optional]
-  --filter, -F <str>     - Filter the table to only include time entries whose descriptions contain the given string. Does not affect calculations [optional]
-  --start-date, -s <str> - Start day of the slip calculation. Defaults to the start of the current week [optional]
-  --end-date, -e <str>   - End day of the slip calculation. Defaults to the current day [optional]
-
-FLAGS:
-  --links, -L    - Show Toggl links for each day
-  --projects, -p - Include project names in the descriptions
-  --all, -a      - Show even the empty days
-  --fresh, -f    - Clear cached requests. Use when you have made changes to your Toggl account during the day. When just playing with the flags you can use the cache. The cache is automatically cleared after 12h
-  --help, -h     - show help
+```sh
+pnpm install
 ```
 
-<img width="724" alt="image" src="https://github.com/user-attachments/assets/035fc998-3fa6-4273-8e31-795cf453c1b9" />
+## Load CSV Data
+
+Load one or more Toggl detailed-report CSV exports:
+
+```sh
+pnpm start load toggl.csv
+pnpm start load january.csv february.csv
+```
+
+Data is stored in the SQLite database at
+`~/.local/share/toggl-hour-slip/toggl-hour-slip.sqlite3`. Each CSV is
+authoritative for every start date it contains: existing entries for a date are
+deleted before all entries for that date are inserted. Loading the same files
+repeatedly is therefore idempotent. Entries that cross midnight are assigned to
+their start date.
+
+## Report
+
+Run the report after loading CSV data:
+
+```sh
+pnpm start --start-date 2026-07-01 --end-date 2026-07-24
+pnpm start --projects --exclude "Vacation|Sick" --decimal
+```
+
+Use `pnpm start --help` for all report options and
+`pnpm start load --help` for CSV loading help.
+
+The existing Toggl API implementation remains in the source tree but is not used
+by the report or CSV loading commands.

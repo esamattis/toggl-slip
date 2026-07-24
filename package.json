@@ -1,11 +1,16 @@
 {
     "name": "toggl-hour-slip",
     "version": "1.0.0",
+    "packageManager": "pnpm@11.5.3",
     "type": "module",
+    "engines": {
+        "node": ">=26 <27"
+    },
     "main": "index.js",
     "scripts": {
         "start": "node src/main.mts",
-        "test": "node --test src/*.test.mts"
+        "test": "node --test src/*.test.mts",
+        "typecheck": "tsc --noEmit"
     },
     "bin": {
         "toggl-slip": "src/main.mts"
@@ -23,6 +28,6 @@
         "zod": "^3.24.2"
     },
     "devDependencies": {
-        "@types/node": "^22.13.8"
+        "@types/node": "^26.0.0"
     }
 }
